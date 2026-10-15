@@ -1,6 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function App() {
+  const [targetFormat, setTargetFormat] = useState('Executive Summary');
+  const [automationAction, setAutomationAction] = useState('Send Summary via Email & Slack');
+  const [loading, setLoading] = useState(false);
+  const [apiResponse, setApiResponse] = useState(null);
+
+  // Function to handle clicking the process button
+  const handleProcessDocument = async () => {
+    setLoading(true);
+    setApiResponse(null);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/process-document', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target_format: targetFormat,
+          automation_action: automationAction,
+        }),
+      });
+
+      const data = await response.json();
+      setApiResponse(data);
+    } catch (error) {
+      console.error('Error connecting to backend:', error);
+      setApiResponse({
+        success: false,
+        message: 'Could not connect to Python backend. Ensure uvicorn is running on port 8000!',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Top Navigation */}
@@ -32,7 +67,11 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Target Output Format</label>
-              <select className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <select
+                value={targetFormat}
+                onChange={(e) => setTargetFormat(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+              >
                 <option>Executive Summary</option>
                 <option>Structured Data Table</option>
                 <option>Key Action Items & Risk Analysis</option>
@@ -40,7 +79,11 @@ function App() {
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Automation Action</label>
-              <select className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <select
+                value={automationAction}
+                onChange={(e) => setAutomationAction(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+              >
                 <option>Send Summary via Email & Slack</option>
                 <option>Save to Database Only</option>
               </select>
@@ -48,9 +91,29 @@ function App() {
           </div>
 
           {/* Process Button */}
-          <button className="w-full bg-blue-600 hover:bg-blue-500 transition text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-blue-500/20">
-            Generate Insights & Trigger Automation
+          <button
+            onClick={handleProcessDocument}
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 transition text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-blue-500/20 flex items-center justify-center gap-2"
+          >
+            {loading ? 'Processing with Backend...' : 'Generate Insights & Trigger Automation'}
           </button>
+
+          {/* Backend Results Display Area */}
+          {apiResponse && (
+            <div className={`mt-4 p-4 rounded-xl border ${apiResponse.success ? 'bg-slate-950 border-blue-500/40' : 'bg-red-950/40 border-red-500/40'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Backend Response</span>
+                <span className="text-xs text-slate-400">Status: {apiResponse.success ? '200 OK' : 'Error'}</span>
+              </div>
+              <p className="text-sm text-slate-300 font-mono mb-2">{apiResponse.message}</p>
+              {apiResponse.summary && (
+                <div className="p-3 bg-slate-900 rounded border border-slate-800 text-xs text-slate-300 font-sans">
+                  <strong>AI Output Preview:</strong> {apiResponse.summary}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
