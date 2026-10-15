@@ -12,7 +12,7 @@ function App() {
     setApiResponse(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/process-document', {
+      const response = await fetch('http://localhost:8000/api/process-document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,3 +121,4 @@ function App() {
 }
 
 export default App;
+
